@@ -9,20 +9,51 @@ local function find( _type )
     end
 end
 
-reactor = peripheral.wrap(find("draconic_reactor"))
-fluxGate = peripheral.wrap(find("flux_gate"))
-mon = peripheral.wrap(find("monitor"))
+function initializeController()
+	--set up reactor devices
+	reactor = peripheral.wrap(find("draconic_reactor"))
+	inputFluxGate = peripheral.wrap(find("flux_gate_0"))
+	outputFluxGate = peripheral.wrap(find("flux_gate_1"))
+	mon = peripheral.wrap(find("monitor"))
+	
+	
+	--placeholders need to be tweaked by experimenting with the reactor
+	timestep = 100
+	integral = 0
+	
+	
+	--input controller parameters
+	maxInputValue = 700000
+	contStrTarget = 30000000
+	inputKP = 1
+	inputKI = 0.001
+	inputKD = 1
+	inputFluxGate.setSignalLowFlow(10000)
+	
+	
+	--output controller parameters
+	maxInputValue = 700000
+	eSatTarget=50000000
+	outputKp = 1
+	outputKI = 0.001
+	outputKD = 1
+	--TODO use fixed value until input parameters are stabilized.
+	--outputFluxGate.setSignalLowFlow(10000)
+end
 
 function cls()
+	--clear the monitor
 	mon.clear()
 	mon.setCursorPos(1,1)
 end
 
 function line(y)
+	--go to specified line on the monitor
 	mon.setCursorPos(1,y)
 end
 
 function getInfo()
+	--update reactor internal values
 	rInfo = reactor.getReactorInfo()
 	
 	tmp = rInfo["temperature"]
@@ -34,6 +65,7 @@ function getInfo()
 end
 
 function formatDisplay()
+	--update the display information
 	rfCharge = eSat * 0.0000001
 	fieldStr = contStr * 0.000001
 	rfDisplay = genRate / 1000
@@ -53,33 +85,51 @@ function formatDisplay()
 	line(6)
 	mon.write("RF production = " .. rfDisplay .. " RF/t")
 	line(7)
-	Gate()
 end
 
-function Gate()
-	lowFlow = fluxGate.getSignalLowFlow()
+
+
+
+function regulateInput()
+	--sets the value of the input gate of the reactor.
+	--call this function each time step to regulate the input level of the reactor
+	inputError = contStrTarget - contStr
+	inputIntegral = inputIntegral + (inputError * timestep)
+	inputDerivate = (inputError - preInputError) / timestep
 	
-	if eSat > Threshold then
-		if lowFlow >= (700000 - Increment) then
-			lowFlow = (700000 - Increment)
-		end
-		
-		lowFlow = lowFlow + Increment
-		
-	else
-		if lowFlow < Increment then
-			lowFlow = Increment
-		end
-		
-		lowFlow = lowFlow - Increment
-	end
+	--set the actual value on the flow gate
+	inputValue = (inputKP * inputError) + (inputKI * inputIntegral) + (inputKD * inputDerivate);
+	if inputValue < 0 then
+		inputValue = 0
+	else if inputValue > 
+	inputFluxGate.setSignalLowFlow(inputValue)
 	
-	mon.write("Flux Gate set to " .. lowFlow .. " RF/t")
-	line(9)
-	fluxGate.setSignalLowFlow(lowFlow)
+	--save the error for next cycle
+	preInputError = inputError
 end
+	
+
+function regulateOutput()
+	--sets the value of the output gate of the reactor.
+	--call this function each time step to regulate the output level of the reactor
+	outputError = contStrTarget - contStr
+	outputIntegral = outputIntegral + (outputError * timestep)
+	outputDerivate = (outputError - preOutputError) / timestep
+	
+	--set the actual value on the flow gate
+	outputValue = (outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate);
+	if outputValue < 0 then
+		outputValue = 0
+	else if outputValue > 
+	outputFluxGate.setSignalLowFlow(outputValue)
+	
+	--save the error for next cycle
+	preOutputError = outputError
+end
+
 
 function safety()
+	--checks all safety constraints of the controller
 	if tmp > 7777 then
 		eText = "Reactor too hot"
 		reactor.stopReactor()
@@ -132,10 +182,24 @@ function safety()
 	mon.write(eText)
 end
 
-while true do
-	getInfo()
-	formatDisplay()
-	safety()
-	sleep(0.1)
-	cls()
+function run()
+	initializeController()
+	while true do
+		getInfo()
+		formatDisplay()
+		regulateInput()
+		--TODO uncomment to allow output to be regulated
+		--use fixed output until input parameters are stabilized
+		--regulateOutput() 
+		gate()
+		safety()
+		sleep(timestep / 1000)
+		cls()
+	end
 end
+
+run()
+
+
+
+
