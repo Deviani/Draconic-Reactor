@@ -32,7 +32,7 @@ function initializeController()
 	
 	
 	--output controller parameters
-	maxInputValue = 700000
+	maxOutputValue = 700000
 	eSatTarget=50000000
 	outputKp = 1
 	outputKI = 0.001
@@ -101,8 +101,9 @@ function regulateInput()
 	inputValue = (inputKP * inputError) + (inputKI * inputIntegral) + (inputKD * inputDerivate);
 	if inputValue < 0 then
 		inputValue = 0
-	else if inputValue > 
-	inputFluxGate.setSignalLowFlow(inputValue)
+	else if inputValue > maxInputValue
+		inputValue = maxInputValue
+	end
 	
 	--save the error for next cycle
 	preInputError = inputError
@@ -120,7 +121,9 @@ function regulateOutput()
 	outputValue = (outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate);
 	if outputValue < 0 then
 		outputValue = 0
-	else if outputValue > 
+	else if outputValue > maxOutputValue
+		outputValue = maxOutputValue
+	end
 	outputFluxGate.setSignalLowFlow(outputValue)
 	
 	--save the error for next cycle
