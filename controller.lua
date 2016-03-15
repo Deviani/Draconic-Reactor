@@ -9,19 +9,15 @@ end
 function initializeController()
 	--set up reactor devices
 	reactor = peripheral.wrap(find("draconic_reactor"))
-
 	inputFluxGate = peripheral.wrap(find("flux_gate_0"))
 	outputFluxGate = peripheral.wrap(find("flux_gate_1"))
 	mon = peripheral.wrap(find("monitor"))
-	
 	
 	--placeholders need to be tweaked by experimenting with the reactor
 	timestep = 100
 	integral = 0
 	
-	
 	--input controller parameters
-
 	maxInputValue = 500000
 	contStrTarget = 50000000
 	inputKP = 1
@@ -38,15 +34,12 @@ function initializeController()
 	preOutputError = 0
 	outputValue = 0
 
-	
 	--output controller parameters
 	maxOutputValue = 700000
 	eSatTarget=50000000
 	outputKp = 1
 	outputKI = 0.001
 	outputKD = 1
-	--TODO use fixed value until input parameters are stabilized.
-	--outputFluxGate.setSignalLowFlow(10000)
 end
 
 function cls()
@@ -100,7 +93,7 @@ end
 function regulateInput()
 	-- Reactor startup
 	if rInfo["status"] == "charging" then
-		inputFluxGate.setSignalLowFlow(300000)
+		inputFluxGate.setSignalLowFlow(400000)
 		return
 	elseif rInfo["status"] == "charged" then
 		reactor.activateReactor()
@@ -129,16 +122,8 @@ function regulateInput()
 	--if contStrTarget > 5000000 and inputValue > 0 then
 		--contStrTarget = contStrTarget - 100000
 	--end
-	
-	contStrTarget = 5000000
 		
 end
-
-
-
-
-
-	
 
 function regulateOutput()
 	-- Reactor Heat up
@@ -150,12 +135,6 @@ function regulateOutput()
 	--sets the value of the output gate of the reactor.
 	--call this function each time step to regulate the output level of the reactor
 	outputError = eSatTarget - eSat 
-
-
-function regulateOutput()
-	--sets the value of the output gate of the reactor.
-	--call this function each time step to regulate the output level of the reactor
-	outputError = contStrTarget - contStr
 	outputIntegral = outputIntegral + (outputError * timestep)
 	outputDerivate = (outputError - preOutputError) / timestep
 	
@@ -176,9 +155,6 @@ function regulateOutput()
 	end
 	outputFluxGate.setSignalLowFlow(outputValue)
 	
-
-	outputFluxGate.setSignalLowFlow(outputValue)
-	
 	--save the error for next cycle
 	preOutputError = outputError
 end
@@ -187,22 +163,19 @@ end
 function safety()
 	eText = "Reactor Running"
 	--checks all safety constraints of the controller
-	if tmp > 8000 then
-=======
-	--checks all safety constraints of the controller
-	if tmp > 7777 then
+	if tmp > 7900 then
 		eText = "Reactor too hot"
 		reactor.stopReactor()
 		stopped = true
 	end
 	
-	if fConv >= 95 then
+	if fConv >= 90 then
 		eText = "Reactor needs to refuel"
 		reactor.stopReactor()
 		stopped = true
 	end
 	
-	if tmp < 2000 and fConv <= 95 then
+	if tmp < 2000 and fConv <= 90 then
 		reactor.chargeReactor()
 		eText = "Charging reactor"
 	end
@@ -221,13 +194,6 @@ function run()
 		regulateInput()
 		regulateOutput() 
 		formatDisplay()
-		getInfo()
-		formatDisplay()
-		regulateInput()
-		--TODO uncomment to allow output to be regulated
-		--use fixed output until input parameters are stabilized
-		--regulateOutput() 
-		gate()
 		safety()
 		sleep(timestep / 1000)
 		cls()
