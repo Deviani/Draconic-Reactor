@@ -9,8 +9,8 @@ end
 function initializeController()
 	--set up reactor devices
 	reactor = peripheral.wrap(find("draconic_reactor"))
-	inputFluxGate = peripheral.wrap(find("flux_gate_0"))
-	outputFluxGate = peripheral.wrap(find("flux_gate_1"))
+	inputFluxGate = peripheral.wrap("flux_gate_0")
+	outputFluxGate = peripheral.wrap("flux_gate_1")
 	mon = peripheral.wrap(find("monitor"))
 	
 	--placeholders need to be tweaked by experimenting with the reactor
@@ -19,7 +19,7 @@ function initializeController()
 	
 	--input controller parameters
 	maxInputValue = 500000
-	contStrTarget = 50000000
+	contStrTarget = 80000000
 	inputKP = 1
 	inputKI = 0.001
 	inputKD = 1
@@ -37,7 +37,7 @@ function initializeController()
 	--output controller parameters
 	maxOutputValue = 700000
 	eSatTarget=50000000
-	outputKp = 1
+	outputKP = 1
 	outputKI = 0.001
 	outputKD = 1
 end
@@ -140,17 +140,12 @@ function regulateOutput()
 	
 	--set the actual value on the flow gate
 
-	outputValue = ((outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate)) * -1
+	outputValue = ((outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate))
 	
 	print("Output: " .. outputValue)
 	if outputValue < 0 then
 		outputValue = 0
 	elseif outputValue > maxOutputValue then
-
-	outputValue = (outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate);
-	if outputValue < 0 then
-		outputValue = 0
-	else if outputValue > maxOutputValue
 		outputValue = maxOutputValue
 	end
 	outputFluxGate.setSignalLowFlow(outputValue)
