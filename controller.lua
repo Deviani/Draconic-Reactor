@@ -14,15 +14,15 @@ function initializeController()
 	mon = peripheral.wrap(find("monitor"))
 	
 	--placeholders need to be tweaked by experimenting with the reactor
-	timestep = 100
+	timestep = 1000
 	integral = 0
 	
 	--input controller parameters
-	maxInputValue = 500000
-	contStrTarget = 80000000
-	inputKP = 1
-	inputKI = 0.001
-	inputKD = 1
+	maxInputValue = 700000
+	contStrTarget = 60000000
+	inputKP = 0.00005
+	inputKI = 0.0000022
+	inputKD = 0.00044
 	inputFluxGate.setSignalLowFlow(10000)
 	
 	--initilize variables
@@ -104,10 +104,16 @@ function regulateInput()
 	inputError = contStrTarget - contStr
 
 	inputIntegral = inputIntegral + (inputError * timestep)
+	if inputIntegral < 0 then
+		inputIntegral = 0
+	end
 	inputDerivate = (inputError - preInputError) / timestep
 
 	--set the actual value on the flow gate
 	inputValue = (inputKP * inputError) + (inputKI * inputIntegral) + (inputKD * inputDerivate)
+	print("P-input: " .. (inputKP * inputError))
+	print("I-Input: " .. (inputKI * inputIntegral))
+	print("D-Input: " .. (inputKD * inputDerivate))
 	print("Input: " .. inputValue)
 	
 	if inputValue < 0 then
@@ -187,7 +193,7 @@ function run()
 		
 		getInfo()
 		regulateInput()
-		regulateOutput() 
+		--regulateOutput() 
 		formatDisplay()
 		safety()
 		sleep(timestep / 1000)
