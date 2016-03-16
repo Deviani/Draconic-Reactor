@@ -6,20 +6,75 @@ local function find( _type )
     end
 end
 
+local function round(num, places)
+		if not num then 
+			return 
+		end
+		
+        num = tostring(num)
+        local inc = false
+        local decimal = string.find(num, "%.")
+		if not decimal then
+			return
+		end
+        if num:len() - decimal <= places then return tonumber(num) end --already rounded, nothing to do.
+        local digit = tonumber(num:sub(decimal + places + 1))
+        num = num:sub(1, decimal + places)
+        if digit <= 4 then return tonumber(num) end --no incrementation needed, return truncated number
+        local newNum = ""
+        for i=num:len(), 1, -1 do
+                digit = tonumber(num:sub(i))
+                if digit == 9 then
+                        if i > 1 then
+                                newNum = "0"..newNum
+                        else
+                                newNum = "10"..newNum
+                        end
+                elseif digit == nil then
+                        newNum = "."..newNum
+                else
+                        if i > 1 then
+                                newNum = num:sub(1,i-1)..(digit + 1)..newNum
+                        else
+                                newNum = (digit + 1)..newNum
+                        end
+                        return tonumber(newNum) --No more 9s found, so we are done incrementing. Copy remaining digits, then return number.
+                end
+        end
+        return tonumber(newNum)
+end
+
+function setMode(mode)
+	if mode == "efficent" then
+		contStrTarget = 30000000
+		eSatTarget=300000000
+	elseif mode == "extreme" then
+		contStrTarget = 5000000
+	else
+		mode = "balance"
+		contStrTarget = 50000000
+		eSatTarget=500000000
+	end
+end
+
 function initializeController()
 	--set up reactor devices
 	reactor = peripheral.wrap(find("draconic_reactor"))
 	inputFluxGate = peripheral.wrap("flux_gate_0")
 	outputFluxGate = peripheral.wrap("flux_gate_1")
 	mon = peripheral.wrap(find("monitor"))
+--	store = peripheral.wrap(find("draconic_rf_storage"))
+
+	--set initial mode to balanced
+	
 	
 	--placeholders need to be tweaked by experimenting with the reactor
-	timestep = 1000
+	timestep = 100
 	integral = 0
 	
 	--input controller parameters
 	maxInputValue = 700000
-	contStrTarget = 60000000
+	contStrTarget = 5000000
 	inputKP = 0.00005
 	inputKI = 0.0000022
 	inputKD = 0.00044
@@ -36,21 +91,21 @@ function initializeController()
 
 	--output controller parameters
 	maxOutputValue = 700000
-	eSatTarget=50000000
+	eSatTarget=500000000
 	outputKP = 1
-	outputKI = 0.001
-	outputKD = 1
+	outputKI = 0.0000022
+	outputKD = 0.002
 end
 
-function cls()
-	--clear the monitor
-	mon.clear()
-	mon.setCursorPos(1,1)
-end
-
-function line(y)
-	--go to specified line on the monitor
+function updateLine(y,text)
+	-- start at specified line
 	mon.setCursorPos(1,y)
+	maxw, maxh = mon.getSize()
+	
+	for i = #text, maxw do
+		text = text .. " "
+	end
+	mon.write(text)
 end
 
 function getInfo()
@@ -67,27 +122,20 @@ function getInfo()
 end
 
 function formatDisplay()
-	--update the display information
+	-- update display values
 	rfCharge = eSat * 0.0000001
 	fieldStr = contStr * 0.000001
 	rfDisplay = genRate / 1000
 	fuel = (fConv / 10368) *100
 	
-	line(1)
-	mon.write("Reactor temperature = " .. tmp)
-	line(2)
-	mon.write("Energy saturation = ".. rfCharge .. "%")
-	line(3)
-	mon.write("Containtment strength = " .. fieldStr .. "%")
-	line(4)
-	mon.write("Fuel Used = " .. fuel .. "%")
-	line(6)
-	mon.write("RF production = " .. rfDisplay .. " RF/t")
-	line(7)
-	mon.write("Containtment Strain = " .. contDrain .. " RF/t")
-	line(8)
-	mon.write("Net = " ..(genRate - contDrain) .. " RF/t")
-	line(10)
+	-- update screen text without clearing
+	updateLine(1,"Reactor temperature = " .. tmp)
+	updateLine(2,"Energy saturation = " .. round(rfCharge,2) .. "%")
+	updateLine(3,"Containtment strength = " .. round(fieldStr,2) .. "%")
+	updateLine(4,"Fuel Used = " .. round(fuel,2) .. "%")
+	updateLine(6,"RF production = " .. rfDisplay .. " RF/t")
+	updateLine(7,"Containtment Strain = " .. contDrain .. " RF/t")
+	updateLine(8,"Net = " ..(genRate - contDrain) .. " RF/t")
 end
 
 function regulateInput()
@@ -122,42 +170,42 @@ function regulateInput()
 		inputValue = maxInputValue
 	end
 	
-	inputFluxGate.setSignalLowFlow(inputValue)
-	
-	-- to ease it down, so it doesn't take too long to get back to 0 input value
-	--if contStrTarget > 5000000 and inputValue > 0 then
-		--contStrTarget = contStrTarget - 100000
-	--end
-		
+	inputFluxGate.setSignalLowFlow(inputValue)	
 end
 
 function regulateOutput()
 	-- Reactor Heat up
-	if tmp < 7500 then
+	if tmp < 7500 and mode == "extreme" then
 		outputFluxGate.setSignalLowFlow(maxOutputValue)
 		return
-	end
+	else
+		--sets the value of the output gate of the reactor.
+		--call this function each time step to regulate the output level of the reactor
+		outputError = eSatTarget - eSat 
+		outputIntegral = outputIntegral + (outputError * timestep)
+		outputDerivate = (outputError - preOutputError) / timestep
+	
+		--set the actual value on the flow gate
+		outputValue = ((outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate)) * -1
 
-	--sets the value of the output gate of the reactor.
-	--call this function each time step to regulate the output level of the reactor
-	outputError = eSatTarget - eSat 
-	outputIntegral = outputIntegral + (outputError * timestep)
-	outputDerivate = (outputError - preOutputError) / timestep
+		print("P-output: " .. (outputKP * outputError))
+		print("I-output: " .. (outputKI * outputIntegral))
+		print("D-output: " .. (outputKD * outputDerivate))
+		print(eSat)
+		print(eSatTarget)
+		print("output: " .. outputValue)
 	
-	--set the actual value on the flow gate
+		if outputValue < 0 then
+			outputValue = 0
+		elseif outputValue > maxOutputValue then
+			outputValue = maxOutputValue
+		end
 
-	outputValue = ((outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate))
+		outputFluxGate.setSignalLowFlow(outputValue)
 	
-	print("Output: " .. outputValue)
-	if outputValue < 0 then
-		outputValue = 0
-	elseif outputValue > maxOutputValue then
-		outputValue = maxOutputValue
+		--save the error for next cycle
+		preOutputError = outputError
 	end
-	outputFluxGate.setSignalLowFlow(outputValue)
-	
-	--save the error for next cycle
-	preOutputError = outputError
 end
 
 
@@ -170,22 +218,21 @@ function safety()
 		stopped = true
 	end
 	
-	if fConv >= 90 then
+	if fuel >= 90 then
 		eText = "Reactor needs to refuel"
 		reactor.stopReactor()
 		stopped = true
 	end
 	
-	if tmp < 2000 and fConv <= 90 then
+	if tmp < 2000 and fuel <= 90 and rInfo["status"] == "offline" then
 		reactor.chargeReactor()
 		eText = "Charging reactor"
 	end
 	
-	mon.write(eText)
+	updateLine(10, eText)
 end
 
 function run()
-	initializeController()
 	while true do
 		-- debug
 		term.clear()
@@ -193,12 +240,16 @@ function run()
 		
 		getInfo()
 		regulateInput()
-		--regulateOutput() 
+		regulateOutput() 
 		formatDisplay()
 		safety()
 		sleep(timestep / 1000)
-		cls()
 	end
 end
 
+-- Set initil values
+initializeController()
+-- Set Balanced mode
+setMode("balanced")
+-- Run program loop
 run()
