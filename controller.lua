@@ -75,9 +75,12 @@ function initializeController()
 	--input controller parameters
 	maxInputValue = 700000
 	contStrTarget = 5000000
-	inputKP = 0.00005
-	inputKI = 0.0000022
-	inputKD = 0.00044
+	
+	inputKP = 5
+	inputKI = 0.22
+	inputKD = 44
+	intputScaleFactor = 0.00001
+	
 	inputFluxGate.setSignalLowFlow(10000)
 	
 	--initilize variables
@@ -95,6 +98,7 @@ function initializeController()
 	outputKP = 1
 	outputKI = 0.0000022
 	outputKD = 0.002
+	outputScaleFactor = -1
 end
 
 function updateLine(y,text)
@@ -158,7 +162,7 @@ function regulateInput()
 	inputDerivate = (inputError - preInputError) / timestep
 
 	--set the actual value on the flow gate
-	inputValue = (inputKP * inputError) + (inputKI * inputIntegral) + (inputKD * inputDerivate)
+	inputValue = intputScaleFactor * ((inputKP * inputError) + (inputKI * inputIntegral) + (inputKD * inputDerivate))
 	print("P-input: " .. (inputKP * inputError))
 	print("I-Input: " .. (inputKI * inputIntegral))
 	print("D-Input: " .. (inputKD * inputDerivate))
@@ -186,7 +190,7 @@ function regulateOutput()
 		outputDerivate = (outputError - preOutputError) / timestep
 	
 		--set the actual value on the flow gate
-		outputValue = ((outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate)) * -1
+		outputValue = outputScaleFactor * ((outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate))
 
 		print("P-output: " .. (outputKP * outputError))
 		print("I-output: " .. (outputKI * outputIntegral))
@@ -233,6 +237,10 @@ function safety()
 end
 
 function run()
+	-- Set initil values
+	initializeController()
+	-- Set Balanced mode
+	setMode("balanced")
 	while true do
 		-- debug
 		term.clear()
@@ -247,9 +255,5 @@ function run()
 	end
 end
 
--- Set initil values
-initializeController()
--- Set Balanced mode
-setMode("balanced")
 -- Run program loop
 run()
