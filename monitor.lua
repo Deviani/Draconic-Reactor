@@ -23,7 +23,7 @@ function initializeController()
 	
 	
 	--placeholders need to be tweaked by experimenting with the reactor
-	timestep = 100
+	timestep = 10
 	integral = 0
 end
 
