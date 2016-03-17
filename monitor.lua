@@ -6,38 +6,6 @@ local function find( _type )
     end
 end
 
-function initializeController()
-
-
-	--set up reactor devices
-	reactor = peripheral.wrap(find("draconic_reactor"))
-	inputFluxGate = peripheral.wrap("flux_gate_0")
-	outputFluxGate = peripheral.wrap("flux_gate_1")
-	mon = peripheral.wrap(find("monitor"))
---	store = peripheral.wrap(find("draconic_rf_storage"))
-
-	inputValue = inputFluxGate.getSignalLowFlow()
-	outputValue = outputFluxGate.getSignalLowFlow()
-
-	--set initial mode to balanced
-	
-	
-	--placeholders need to be tweaked by experimenting with the reactor
-	timestep = 10
-	integral = 0
-end
-
-function updateLine(y,text)
-	-- start at specified line
-	mon.setCursorPos(1,y)
-	maxw, maxh = mon.getSize()
-	
-	for i = #text, maxw do
-		text = text .. " "
-	end
-	mon.write(text)
-end
-
 function getInfo()
 	--update reactor internal values
 	rInfo = reactor.getReactorInfo()
@@ -54,7 +22,6 @@ function getInfo()
 	outputValue = outputFluxGate.getSignalLowFlow()
 end
 
-
 function initializeMonitor()
 	--set up reactor devices
 	reactor = peripheral.wrap(find("draconic_reactor"))
@@ -62,14 +29,13 @@ function initializeMonitor()
 	outputFluxGate = peripheral.wrap("flux_gate_1")
 	mon = peripheral.wrap(find("monitor"))
 	
-	timestep = 100
+	timestep = 10
 	inputValue = 0
 	outputValue = 0
 
 	myoutputhandle = io.open("ReactorMonitorOutput.csv", "w")
 	
 end
-
 
 function run()
 	initializeMonitor()
