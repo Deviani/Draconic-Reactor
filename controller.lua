@@ -47,13 +47,13 @@ end
 function setMode(mode)
 	if mode == "efficent" then
 		contStrTarget = 30000000
-		eSatTarget=300000000
+		tmpTarget=5000
 	elseif mode == "extreme" then
 		contStrTarget = 5000000
 	else
 		mode = "balance"
 		contStrTarget = 50000000
-		eSatTarget=500000000
+		tmpTarget=6250
 	end
 end
 
@@ -83,22 +83,24 @@ function initializeController()
 	
 	inputFluxGate.setSignalLowFlow(10000)
 	
+	
+
+	--output controller parameters
+	maxOutputValue = 1000000
+	tmpTarget=7500
+	outputKP = 25
+	outputKI = 0.3
+	outputKD = 1000
+	outputScaleFactor = 1
+	
 	--initilize variables
-	inputIntegral = 0
+	inputIntegral = 50000/inputKI
 	inputDerivate = 0
-	outputIntegral = 0
+	outputIntegral = 515000/outputKI
 	outputDerivate = 0
 	preInputError = 0
 	preOutputError = 0
 	outputValue = 0
-
-	--output controller parameters
-	maxOutputValue = 700000
-	eSatTarget=500000000
-	outputKP = 1
-	outputKI = 0.0000022
-	outputKD = 0.002
-	outputScaleFactor = -1
 end
 
 function updateLine(y,text)
@@ -134,13 +136,9 @@ function formatDisplay()
 	
 	-- update screen text without clearing
 	updateLine(1,"Reactor temperature = " .. tmp)
-	updateLine(2,"Energy saturation = " .. round(rfCharge,2) .. "%")
-	 --when the reactor starts charging, this line throws an error: concatinating string with nill value if the value is not checked.
-	if round(fieldStr,2)==nil then
-		updateLine(3,"Containtment strength = " .. fieldStr .. "%")
-	else 
-		updateLine(3,"Containtment strength = " .. round(fieldStr,2) .. "%")
-	end
+	updateLine(2,"Energy saturation = " .. round(rfCharge,2) .. "%")  		--when the reactor starts charging, this line throws an error: concatinating string with nil
+	updateLine(3,"Containtment strength = " .. round(fieldStr,2) .. "%") 	--when the reactor starts charging, this line throws an error: concatinating string with nil
+
 	updateLine(4,"Fuel Used = " .. round(fuel,2) .. "%")
 	updateLine(6,"RF production = " .. rfDisplay .. " RF/t")
 	updateLine(7,"Containtment Strain = " .. contDrain .. " RF/t")
@@ -159,7 +157,6 @@ function regulateInput()
 	--sets the value of the input gate of the reactor.
 	--call this function each time step to regulate the input level of the reactor
 	inputError = contStrTarget - contStr
-
 	inputIntegral = inputIntegral + (inputError * timestep/1000)
 	if inputIntegral < 0 then
 		inputIntegral = 0
@@ -190,9 +187,9 @@ function regulateOutput()
 	else
 		--sets the value of the output gate of the reactor.
 		--call this function each time step to regulate the output level of the reactor
-		outputError = eSatTarget - eSat 
-		outputIntegral = outputIntegral + (outputError * timestep)
-		outputDerivate = (outputError - preOutputError) / timestep
+		outputError = tmpTarget - tmp 
+		outputIntegral = outputIntegral + (outputError * timestep/1000)
+		outputDerivate = (outputError - preOutputError) / (timestep/1000)
 	
 		--set the actual value on the flow gate
 		outputValue = outputScaleFactor * ((outputKP * outputError) + (outputKI * outputIntegral) + (outputKD * outputDerivate))
@@ -200,8 +197,8 @@ function regulateOutput()
 		print("P-output: " .. (outputKP * outputError))
 		print("I-output: " .. (outputKI * outputIntegral))
 		print("D-output: " .. (outputKD * outputDerivate))
-		print(eSat)
-		print(eSatTarget)
+		print(tmp)
+		print(tmpTarget)
 		print("output: " .. outputValue)
 	
 		if outputValue < 0 then
