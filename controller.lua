@@ -74,7 +74,7 @@ function initializeController()
 	
 	--input controller parameters
 	maxInputValue = 700000
-	contStrTarget = 5000000
+	contStrTarget = 50000000
 	
 	inputKP = 0.0264
 	inputKI = 0.2
@@ -135,7 +135,12 @@ function formatDisplay()
 	-- update screen text without clearing
 	updateLine(1,"Reactor temperature = " .. tmp)
 	updateLine(2,"Energy saturation = " .. round(rfCharge,2) .. "%")
-	updateLine(3,"Containtment strength = " .. round(fieldStr,2) .. "%")
+	 --when the reactor starts charging, this line throws an error: concatinating string with nill value if the value is not checked.
+	if round(fieldStr,2)==nil then
+		updateLine(3,"Containtment strength = " .. fieldStr .. "%")
+	else 
+		updateLine(3,"Containtment strength = " .. round(fieldStr,2) .. "%")
+	end
 	updateLine(4,"Fuel Used = " .. round(fuel,2) .. "%")
 	updateLine(6,"RF production = " .. rfDisplay .. " RF/t")
 	updateLine(7,"Containtment Strain = " .. contDrain .. " RF/t")
