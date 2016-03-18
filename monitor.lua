@@ -39,11 +39,20 @@ end
 
 function run()
 	initializeMonitor()
-	local ouf = assert(io.open("ReactorMonitorOutput.csv", "w"), "Failed to open output file"
-	ouf:write("temperature|saturation|fieldStrength|fieldDrainRate|generationRate|fuelConverion|fuelConversionRate|gateInput|gateOutput\r\n"
+	local ouf = assert(io.open("ReactorMonitorOutput.csv", "w"), "Failed to open output file")
+	ouf:write("temperature|saturation|fieldStrength|fieldDrainRate|generationRate|fuelConverion|gateInput|gateOutput\r\n")
 	while true do
 		getInfo()
-		ouf:write(tmp .. "|" .. eSat .. "|" .. contStr .. "|" .. contDrain .. "|" .. genRate .. "|" .. fConv .. "|" .. fConvR .. "|" .. inputValue .. "|" .. outputValue  .. "\r\n" .. )
+		print("tmp: " .. tmp)
+		print("eSat: " .. eSat)
+		print("contStr: " .. contStr)
+		print("contDrain: " .. contDrain)
+		print("genRate: " .. genRate)
+		print("fConv: " .. fConv)
+		--print("fConvR: " .. fConvR)
+		print("inputValue: " .. inputValue)
+		print("outputValue: " .. outputValue)
+		ouf:write(tmp .. "|" .. eSat .. "|" .. contStr .. "|" .. contDrain .. "|" .. genRate .. "|" .. fConv .. "|" .. inputValue .. "|" .. outputValue  .. "\r\n")
 		sleep(timestep / 1000)
 	end
 end

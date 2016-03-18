@@ -76,10 +76,10 @@ function initializeController()
 	maxInputValue = 700000
 	contStrTarget = 5000000
 	
-	inputKP = 5
-	inputKI = 0.22
-	inputKD = 44
-	intputScaleFactor = 0.00001
+	inputKP = 0.0264
+	inputKI = 0.2
+	inputKD = 0.02
+	intputScaleFactor = 1
 	
 	inputFluxGate.setSignalLowFlow(10000)
 	
@@ -155,11 +155,11 @@ function regulateInput()
 	--call this function each time step to regulate the input level of the reactor
 	inputError = contStrTarget - contStr
 
-	inputIntegral = inputIntegral + (inputError * timestep)
+	inputIntegral = inputIntegral + (inputError * timestep/1000)
 	if inputIntegral < 0 then
 		inputIntegral = 0
 	end
-	inputDerivate = (inputError - preInputError) / timestep
+	inputDerivate = (inputError - preInputError) / (timestep/1000)
 
 	--set the actual value on the flow gate
 	inputValue = intputScaleFactor * ((inputKP * inputError) + (inputKI * inputIntegral) + (inputKD * inputDerivate))
@@ -240,7 +240,7 @@ function run()
 	-- Set initil values
 	initializeController()
 	-- Set Balanced mode
-	setMode("balanced")
+	--setMode("balanced")
 	while true do
 		-- debug
 		term.clear()
