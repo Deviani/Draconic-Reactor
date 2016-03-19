@@ -74,7 +74,7 @@ function initializeController()
 	
 	--input controller parameters
 	maxInputValue = 700000
-	contStrTarget = 50000000
+	contStrTarget = 20000000
 	
 	inputKP = 0.0264
 	inputKI = 0.3
@@ -87,7 +87,7 @@ function initializeController()
 
 	--output controller parameters
 	maxOutputValue = 1000000
-	tmpTarget=7500
+	tmpTarget=6000
 	outputKP = 25
 	outputKI = 0.35
 	outputKD = 1000
@@ -240,6 +240,7 @@ end
 
 function run()
 	-- Set initil values
+	getInfo()
 	initializeController()
 	-- Set Balanced mode
 	--setMode("balanced")
