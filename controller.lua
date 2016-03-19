@@ -93,6 +93,8 @@ function initializeController()
 	outputKD = 1000
 	outputScaleFactor = 1
 	
+	rInfo = reactor.getReactorInfo()
+	genRate = rInfo["generationRate"]
 	--initilize variables
 	inputIntegral = 50000/inputKI 
 	inputDerivate = 0
@@ -240,7 +242,6 @@ end
 
 function run()
 	-- Set initil values
-	getInfo()
 	initializeController()
 	-- Set Balanced mode
 	--setMode("balanced")
