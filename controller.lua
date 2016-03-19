@@ -77,7 +77,7 @@ function initializeController()
 	contStrTarget = 50000000
 	
 	inputKP = 0.0264
-	inputKI = 0.2
+	inputKI = 0.35
 	inputKD = 0.02
 	intputScaleFactor = 1
 	
@@ -94,9 +94,9 @@ function initializeController()
 	outputScaleFactor = 1
 	
 	--initilize variables
-	inputIntegral = 50000/inputKI
+	inputIntegral = 50000/inputKI --used during testing, can be set to other defaulf values for publishing
 	inputDerivate = 0
-	outputIntegral = 515000/outputKI
+	outputIntegral = 400000/outputKI --used during testing, can be set to other defaulf values for publishing
 	outputDerivate = 0
 	preInputError = 0
 	preOutputError = 0
@@ -136,8 +136,8 @@ function formatDisplay()
 	
 	-- update screen text without clearing
 	updateLine(1,"Reactor temperature = " .. tmp)
-	updateLine(2,"Energy saturation = " .. round(rfCharge,2) .. "%")  		--when the reactor starts charging, this line throws an error: concatinating string with nil
-	updateLine(3,"Containtment strength = " .. round(fieldStr,2) .. "%") 	--when the reactor starts charging, this line throws an error: concatinating string with nil
+	--updateLine(2,"Energy saturation = " .. round(rfCharge,2) .. "%")  		--TODO: when the reactor starts charging (and on other random times), this line throws an error: concatinating string with nil
+	--updateLine(3,"Containtment strength = " .. round(fieldStr,2) .. "%") 		--TODO: when the reactor starts charging (and on other random times), this line throws an error: concatinating string with nil
 
 	updateLine(4,"Fuel Used = " .. round(fuel,2) .. "%")
 	updateLine(6,"RF production = " .. rfDisplay .. " RF/t")
