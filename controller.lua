@@ -77,7 +77,7 @@ function initializeController()
 	contStrTarget = 50000000
 	
 	inputKP = 0.0264
-	inputKI = 0.35
+	inputKI = 0.3
 	inputKD = 0.02
 	intputScaleFactor = 1
 	
@@ -89,14 +89,14 @@ function initializeController()
 	maxOutputValue = 1000000
 	tmpTarget=7500
 	outputKP = 25
-	outputKI = 0.3
+	outputKI = 0.35
 	outputKD = 1000
 	outputScaleFactor = 1
 	
 	--initilize variables
-	inputIntegral = 50000/inputKI --used during testing, can be set to other defaulf values for publishing
+	inputIntegral = 50000/inputKI 
 	inputDerivate = 0
-	outputIntegral = 400000/outputKI --used during testing, can be set to other defaulf values for publishing
+	outputIntegral = genRate/outputKI 
 	outputDerivate = 0
 	preInputError = 0
 	preOutputError = 0
